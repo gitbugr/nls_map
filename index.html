@@ -1,11 +1,11 @@
 <html>
 <head>
     <script src="nls_map.js"></script>
-    <script>
-        let map_id;
-    </script>
 </head>
-<body onload='draw(map_id);'>
+<body>
+    <input id='nls_id' type='text' placeholder='NLS Map ID' />
+    <button onclick='draw(document.querySelector("#nls_id").value)'>Fetch map</button>
+    <p id="progress">(<span id="loaded">0</span>/<span id="max">0</span>)</p>
     <canvas id='c'></canvas>
 </body>
 </html>

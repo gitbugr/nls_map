@@ -1,15 +1,23 @@
+const max_loading = 4
+
+let loading = [];
+let loaded_images = 0;
+
 async function draw(image_id) {
+    loaded_images = 0;
+    const canvas = document.getElementById('c');
+    const context = c.getContext('2d');
 
-    let canvas = document.getElementById('c');
-    let context = c.getContext('2d');
+    const image_code = createImageCodeFromID(image_id);
+    const info = await getImageInfo(image_code);
 
-    let image_code = createImageCodeFromID(image_id);
-    let info = await getImageInfo(image_code);
+    const max_image_width = info.width;
+    const max_image_height = info.height;
 
-    let max_image_width = info.width;
-    let max_image_height = info.height;
+    const image_width = image_height = 512;
 
-    let image_width = image_height = 512;
+    const num_images = Math.ceil(max_image_width / image_width) * Math.ceil(max_image_height / image_height);
+    document.querySelector('#max').innerText = num_images;
 
     canvas.width = max_image_width;
     canvas.height = max_image_height;
@@ -17,7 +25,7 @@ async function draw(image_id) {
     product([...Array(Math.ceil(max_image_width / image_width)).keys()], [...Array(Math.ceil(max_image_height / image_height)).keys()])
         .map(([x_index,y_index]) => [x_index * image_width, y_index * image_height])
         .forEach(([x,y]) => {
-            getBase64Image(`https://mapview.nls.uk/iiif/${image_code}/${x},${y},${image_width},${image_height}/pct:100/0/native.jpg`)
+            getBase64Image(`https://map-view.nls.uk/iiif/${image_code}/${x},${y},${image_width},${image_height}/${image_width},${image_height}/0/default.jpg`)
                 .then(value => {
                     let img = new Image();
                     img.src = value;
@@ -27,12 +35,12 @@ async function draw(image_id) {
 }
 
 async function getImageInfo(image_code) {
-    let info_url = `https://mapview.nls.uk/iiif/${image_code}/info.json`
+     info_url = `https://map-view.nls.uk/iiif/${image_code}/info.json`
     return fetch(info_url).then(response => response.json());
 }
 
 function createImageCodeFromID(id) {
-    return `${id.slice(0, -4)}/${id}`;
+    return `2/${id.slice(0,-4)}%2F${id.slice(0)}`;
 }
 
 function product() {
@@ -50,17 +58,30 @@ function product() {
 
 function getBase64Image(imgUrl) {
     return new Promise(resolve => {
-        var img = new Image();
-        img.src = imgUrl;
-        img.setAttribute('crossOrigin', 'anonymous');
-        img.onload = (() => {
-            var canvas = document.createElement("canvas");
-            canvas.width = img.width;
-            canvas.height = img.height;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            var dataURL = canvas.toDataURL("image/png");
-            resolve(dataURL);
-        });
+        const x = setInterval(() => {
+        const imgIndex = loading.indexOf(imgUrl)
+            if (loading.length < max_loading && imgIndex === -1) {
+                loading.push(imgUrl);
+                clearInterval(x);
+                var img = new Image();
+                img.src = imgUrl;
+                img.setAttribute('crossOrigin', 'anonymous');
+                img.onerror = (() => {
+                    loading.splice(loading.indexOf(imgUrl), 1);
+                });
+                img.onload = (() => {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    var dataURL = canvas.toDataURL("image/png");
+                    loading.splice(loading.indexOf(imgUrl), 1);
+                    loaded_images += 1;
+                    document.querySelector('#loaded').innerText = loaded_images;
+                    resolve(dataURL);
+                });
+            }
+        }, 50);
     });
 }
