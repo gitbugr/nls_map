@@ -6,6 +6,7 @@ let loaded_images = 0;
 async function draw(image_id) {
     loaded_images = 0;
     const canvas = document.getElementById('c');
+    const dlLink = document.getElementById('downloadLink');
     const context = c.getContext('2d');
 
     const image_code = createImageCodeFromID(image_id);
@@ -19,6 +20,7 @@ async function draw(image_id) {
     const num_images = Math.ceil(max_image_width / image_width) * Math.ceil(max_image_height / image_height);
     document.querySelector('#max').innerText = num_images;
 
+    dlLink.style.display = 'none';
     canvas.width = max_image_width;
     canvas.height = max_image_height;
 
@@ -29,7 +31,13 @@ async function draw(image_id) {
                 .then(value => {
                     let img = new Image();
                     img.src = value;
-                    img.onload = () => context.drawImage(img, x, y);
+                    img.onload = () => {
+                        context.drawImage(img, x, y);
+                        if (num_images === loaded_images) {
+                            dlLink.style.display = 'block';
+                            dlLink.setAttribute('href', canvas.toDataURL('image/jpeg'));
+                        }
+                    }
                 });
         });
 }
